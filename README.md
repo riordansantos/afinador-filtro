@@ -1,1 +1,0 @@
-# afinador-filtro
