@@ -129,12 +129,12 @@
 
 // export default AudioAnalyzer;
 
-import React, { useEffect, useRef, useState } from 'react';
-import autoCorrelate from './AutoCorrelate';
-import './AudioAnalyzer.css';
+import React, { useEffect, useRef, useState } from 'react'
+import autoCorrelate from './AutoCorrelate'
+import './AudioAnalyzer.css'
 
 const notesData = [
-  { saxNote: 'Do#', frequency: 242.90, standardNote: 'Si3' },
+  { saxNote: 'Do#', frequency: 242.9, standardNote: 'Si3' },
   { saxNote: 'Do', frequency: 233, standardNote: 'La#3' },
   { saxNote: 'Si', frequency: 220, standardNote: 'La3' },
   { saxNote: 'La#', frequency: 207.65, standardNote: 'Sol#3' },
@@ -148,168 +148,189 @@ const notesData = [
   { saxNote: 'Re', frequency: 130.81, standardNote: 'Do3' },
   { saxNote: 'Do#', frequency: 121.45, standardNote: 'Si2' },
   { saxNote: 'Do', frequency: 116.54, standardNote: 'La#2' }
-];
+]
 
 const AudioAnalyzer = () => {
-  const audioContextRef = useRef(null);
-  const analyserRef = useRef(null);
-  const dataArrayRef = useRef(null);
-  const bufferLengthRef = useRef(2048);
-  const canvasRef = useRef(null);
-  const [frequency, setFrequency] = useState(null);
-  const [filterType, setFilterType] = useState('none'); // Estado para o tipo de filtro
+  const audioContextRef = useRef(null)
+  const analyserRef = useRef(null)
+  const dataArrayRef = useRef(null)
+  const bufferLengthRef = useRef(2048)
+  const canvasRef = useRef(null)
+  const [frequency, setFrequency] = useState(null)
+  const [filterType, setFilterType] = useState('none') // Estado para o tipo de filtro
 
   useEffect(() => {
     const startAudioCapture = async () => {
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
-        analyserRef.current = audioContextRef.current.createAnalyser();
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true
+        })
+        audioContextRef.current = new (window.AudioContext ||
+          window.webkitAudioContext)()
+        analyserRef.current = audioContextRef.current.createAnalyser()
 
-        const source = audioContextRef.current.createMediaStreamSource(stream);
-        source.connect(analyserRef.current);
+        const source = audioContextRef.current.createMediaStreamSource(stream)
+        source.connect(analyserRef.current)
 
-        analyserRef.current.fftSize = bufferLengthRef.current;
-        const bufferLength = analyserRef.current.fftSize;
-        dataArrayRef.current = new Float32Array(bufferLength);
+        analyserRef.current.fftSize = bufferLengthRef.current
+        const bufferLength = analyserRef.current.fftSize
+        dataArrayRef.current = new Float32Array(bufferLength)
 
-        analyzeAudio();
+        analyzeAudio()
       } catch (error) {
-        console.error('Erro ao capturar áudio:', error);
+        console.error('Erro ao capturar áudio:', error)
       }
-    };
+    }
 
-    const applyFilter = (dataArray) => {
+    const applyFilter = dataArray => {
       if (filterType === 'fir') {
-        return firFilter(dataArray);
+        return firFilter(dataArray)
       } else if (filterType === 'butter') {
-        return butterworthFilter(dataArray);
+        return butterworthFilter(dataArray)
       }
-      return dataArray;
-    };
+      return dataArray
+    }
 
     const analyzeAudio = () => {
-      if (!analyserRef.current) return;
+      if (!analyserRef.current) return
 
-      analyserRef.current.getFloatTimeDomainData(dataArrayRef.current);
-      const filteredData = applyFilter(dataArrayRef.current); // Aplica o filtro escolhido
-      drawWaveform(filteredData);
+      analyserRef.current.getFloatTimeDomainData(dataArrayRef.current)
+      const filteredData = applyFilter(dataArrayRef.current) // Aplica o filtro escolhido
+      drawWaveform(filteredData)
 
-      const detectedFrequency = autoCorrelate(filteredData, audioContextRef.current.sampleRate);
-      setFrequency(detectedFrequency !== -1 ? detectedFrequency : null);
+      const detectedFrequency = autoCorrelate(
+        filteredData,
+        audioContextRef.current.sampleRate
+      )
+      setFrequency(detectedFrequency !== -1 ? detectedFrequency : null)
 
-      requestAnimationFrame(analyzeAudio);
-    };
+      requestAnimationFrame(analyzeAudio)
+    }
 
-    const drawWaveform = (dataArray) => {
-      const canvas = canvasRef.current;
-      const canvasCtx = canvas.getContext('2d');
-      const width = canvas.width;
-      const height = canvas.height;
+    const drawWaveform = dataArray => {
+      const canvas = canvasRef.current
+      const canvasCtx = canvas.getContext('2d')
+      const width = canvas.width
+      const height = canvas.height
 
-      canvasCtx.clearRect(0, 0, width, height);
-      canvasCtx.lineWidth = 1.5;
-      canvasCtx.strokeStyle = '#ccc';
+      canvasCtx.clearRect(0, 0, width, height)
+      canvasCtx.lineWidth = 1.5
+      canvasCtx.strokeStyle = '#ccc'
 
-      canvasCtx.beginPath();
+      canvasCtx.beginPath()
 
-      let sliceWidth = width * 1.0 / bufferLengthRef.current;
-      let x = 0;
+      let sliceWidth = (width * 1.0) / bufferLengthRef.current
+      let x = 0
 
       for (let i = 0; i < bufferLengthRef.current; i++) {
-        let v = dataArray[i] * 0.5 + 0.5;
-        let y = v * height;
+        let v = dataArray[i] * 0.5 + 0.5
+        let y = v * height
 
         if (i === 0) {
-          canvasCtx.moveTo(x, y);
+          canvasCtx.moveTo(x, y)
         } else {
-          canvasCtx.lineTo(x, y);
+          canvasCtx.lineTo(x, y)
         }
 
-        x += sliceWidth;
+        x += sliceWidth
       }
 
-      canvasCtx.lineTo(width, height / 2);
-      canvasCtx.stroke();
-    };
+      canvasCtx.lineTo(width, height / 2)
+      canvasCtx.stroke()
+    }
 
-    startAudioCapture();
+    startAudioCapture()
 
     return () => {
       if (audioContextRef.current) {
-        audioContextRef.current.close();
+        audioContextRef.current.close()
       }
-    };
-  }, [filterType]); // Dependência do tipo de filtro para reiniciar a análise quando ele mudar
+    }
+    // eslint-disable-next-line
+  }, [filterType]) // Dependência do tipo de filtro para reiniciar a análise quando ele mudar
 
   // Funções para implementar os filtros FIR e Butterworth
-  const firFilter = (data) => {
+  const firFilter = data => {
     // Implementação simplificada do FIR
-    const fc = 248; // Frequência de corte
-    const fs = 44100; // Frequência de amostragem
-    const n = 500; // Ordem do filtro
+    const fc = 248 // Frequência de corte
+    const fs = 44100 // Frequência de amostragem
+    const n = 500 // Ordem do filtro
     let b = new Array(n).fill(0).map((_, i) => {
-      return i === (n - 1) / 2 ? 2 * fc / fs : Math.sin(2 * Math.PI * fc * (i - (n - 1) / 2) / fs) / (Math.PI * (i - (n - 1) / 2));
-    });
-    return convolve(data, b);
-  };
+      return i === (n - 1) / 2
+        ? (2 * fc) / fs
+        : Math.sin((2 * Math.PI * fc * (i - (n - 1) / 2)) / fs) /
+            (Math.PI * (i - (n - 1) / 2))
+    })
+    return convolve(data, b)
+  }
 
-  const butterworthFilter = (data) => {
+  const butterworthFilter = data => {
     // Implementação simplificada do Butterworth usando um filtro passa-baixa
-    const fc = 248; // Frequência de corte
-    const fs = 44100; // Frequência de amostragem
-    const omega = Math.tan(Math.PI * fc / fs);
-    const Q = Math.sqrt(2); // Q-fator para suavidade da resposta
-    const c = 1 + omega / Q + omega * omega;
-    const a0 = omega * omega / c;
-    const a1 = 2 * a0;
-    const a2 = a0;
-    const b1 = 2 * (omega * omega - 1) / c;
-    const b2 = (1 - omega / Q + omega * omega) / c;
+    const fc = 248 // Frequência de corte
+    const fs = 44100 // Frequência de amostragem
+    const omega = Math.tan((Math.PI * fc) / fs)
+    const Q = Math.sqrt(2) // Q-fator para suavidade da resposta
+    const c = 1 + omega / Q + omega * omega
+    const a0 = (omega * omega) / c
+    const a1 = 2 * a0
+    const a2 = a0
+    const b1 = (2 * (omega * omega - 1)) / c
+    const b2 = (1 - omega / Q + omega * omega) / c
 
-    let y = new Array(data.length).fill(0);
+    let y = new Array(data.length).fill(0)
     for (let i = 2; i < data.length; i++) {
-      y[i] = a0 * data[i] + a1 * data[i - 1] + a2 * data[i - 2] - b1 * y[i - 1] - b2 * y[i - 2];
+      y[i] =
+        a0 * data[i] +
+        a1 * data[i - 1] +
+        a2 * data[i - 2] -
+        b1 * y[i - 1] -
+        b2 * y[i - 2]
     }
 
-    return y;
-  };
+    return y
+  }
 
   const convolve = (x, h) => {
     // Convolução simples entre dois sinais
-    let y = new Array(x.length + h.length - 1).fill(0);
+    let y = new Array(x.length + h.length - 1).fill(0)
     for (let i = 0; i < y.length; i++) {
       for (let j = 0; j < h.length; j++) {
         if (i - j >= 0 && i - j < x.length) {
-          y[i] += x[i - j] * h[j];
+          y[i] += x[i - j] * h[j]
         }
       }
     }
-    return y.slice(0, x.length); // Cortar o resultado para o tamanho original do sinal
-  };
+    return y.slice(0, x.length) // Cortar o resultado para o tamanho original do sinal
+  }
 
-  const getNoteData = (frequency) => {
-    if (!frequency) return { color: 'gray', saxNote: '-', frequency: '-', standardNote: '-' };
+  const getNoteData = frequency => {
+    if (!frequency)
+      return { color: 'gray', saxNote: '-', frequency: '-', standardNote: '-' }
 
     let closestNote = notesData.reduce((prev, curr) => {
-      return Math.abs(curr.frequency - frequency) < Math.abs(prev.frequency - frequency) ? curr : prev;
-    });
+      return Math.abs(curr.frequency - frequency) <
+        Math.abs(prev.frequency - frequency)
+        ? curr
+        : prev
+    })
 
-    const isTuned = Math.abs(closestNote.frequency - frequency) <= 1;
-    return { color: isTuned ? 'green' : 'red', ...closestNote };
-  };
+    const isTuned = Math.abs(closestNote.frequency - frequency) <= 1
+    return { color: isTuned ? 'green' : 'red', ...closestNote }
+  }
 
-  const { color, saxNote, standardNote } = getNoteData(frequency);
+  const { color, saxNote, standardNote } = getNoteData(frequency)
 
   return (
-    <div className="audio-analyzer">
-      <canvas ref={canvasRef} className="wave-canvas"></canvas>
+    <div className='audio-analyzer'>
+      <canvas ref={canvasRef} className='wave-canvas'></canvas>
       <div className={`note-display ${color}`}>
-        <p className="note sax-note">{saxNote}</p>
-        <p className="frequency">{frequency ? `${frequency.toFixed(2)} Hz` : 'Capturando...'}</p>
-        <p className="note standard-note">{standardNote}</p>
+        <p className='note sax-note'>{saxNote}</p>
+        <p className='frequency'>
+          {frequency ? `${frequency.toFixed(2)} Hz` : 'Capturando...'}
+        </p>
+        <p className='note standard-note'>{standardNote}</p>
       </div>
-      <div className="filter-controls">
+      <div className='filter-controls'>
         <button
           className={filterType === 'none' ? 'active' : ''}
           onClick={() => setFilterType('none')}
@@ -330,7 +351,7 @@ const AudioAnalyzer = () => {
         </button>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AudioAnalyzer;
+export default AudioAnalyzer
