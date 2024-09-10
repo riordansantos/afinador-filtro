@@ -50,3 +50,29 @@
     margin-bottom: 20px;
   }
   
+  .filter-controls {
+    margin-top: 20px;
+}
+
+.filter-controls button {
+    margin: 0 10px;
+    padding: 10px 20px;
+    border: none;
+    cursor: pointer;
+    color: #ddd;
+    background-color: #555;
+    font-size: 1rem;
+    transition: background-color 0.3s;
+}
+
+.filter-controls button.active {
+    background-color: #0b962c; /* Verde para FIR */
+}
+
+.filter-controls button.active:nth-child(2) {
+    background-color: #a50010; /* Vermelho para Butterworth */
+}
+
+.filter-controls button.active:nth-child(1) {
+    background-color: #6c757d; /* Cinza para Sem Filtro */
+}
