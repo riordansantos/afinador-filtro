@@ -1,0 +1,52 @@
+.audio-analyzer {
+    text-align: center;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    position: relative;
+    background-color: #002147;
+    color: #ddd;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .note-display {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 2rem;
+    color: #ddd;
+    margin-top: -50px;
+  }
+  
+  .note-display.green .note {
+    color: #0b962c;
+  }
+  
+  .note-display.red .note {
+    color: #a50010; 
+  }
+  
+  .note-display.gray .note {
+    color: #6c757d; 
+  }
+  
+  .note {
+    font-size: 4rem;
+    margin: 0;
+  }
+  
+  .frequency {
+    font-size: 1.5rem;
+    margin: 5px 0;
+    color: 'white';
+  }
+  
+  .wave-canvas {
+    width: 100%;
+    height: 200px;
+    background: none;
+    margin-bottom: 20px;
+  }
+  

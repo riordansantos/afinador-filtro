@@ -1,108 +1,98 @@
-// src/AudioAnalyzer.js
 import React, { useEffect, useRef, useState } from 'react';
+import autoCorrelate from './AutoCorrelate';
+import './AudioAnalyzer.css';
 
-// Função de autocorrelação para calcular a frequência dominante
-function autoCorrelate(buffer, sampleRate) {
-  // Algoritmo simplificado para detectar a frequência dominante através da autocorrelação
-  let size = buffer.length;
-  let maxSamples = Math.floor(size / 2);
-  let bestOffset = -1;
-  let bestCorrelation = 0;
-  let rms = 0;
-  let foundGoodCorrelation = false;
-  let correlations = new Array(maxSamples);
-
-  for (let i = 0; i < size; i++) {
-    let val = buffer[i];
-    rms += val * val;
-  }
-  rms = Math.sqrt(rms / size);
-  if (rms < 0.01) {
-    // Qualidade do som muito baixa
-    return -1;
-  }
-
-  let lastCorrelation = 1;
-  for (let offset = 0; offset < maxSamples; offset++) {
-    let correlation = 0;
-
-    for (let i = 0; i < maxSamples; i++) {
-      correlation += Math.abs(buffer[i] - buffer[i + offset]);
-    }
-    correlation = 1 - (correlation / maxSamples);
-    correlations[offset] = correlation; // armazenando para visualização
-
-    if (correlation > 0.9 && correlation > lastCorrelation) {
-      foundGoodCorrelation = true;
-      if (correlation > bestCorrelation) {
-        bestCorrelation = correlation;
-        bestOffset = offset;
-      }
-    } else if (foundGoodCorrelation) {
-      // Se encontrar um ponto baixo após o pico, encerre
-      break;
-    }
-    lastCorrelation = correlation;
-  }
-
-  if (bestCorrelation > 0.01) {
-    // Precisa de pelo menos alguma correlação de qualidade
-    let bestFrequency = sampleRate / bestOffset;
-    return bestFrequency;
-  }
-  return -1;
-}
+const notesData = [
+  { saxNote: 'Do#', frequency: 242.90, standardNote: 'Si3' },
+  { saxNote: 'Do', frequency: 233, standardNote: 'La#3' },
+  { saxNote: 'Si', frequency: 220, standardNote: 'La3' },
+  { saxNote: 'La#', frequency: 207.65, standardNote: 'Sol#3' },
+  { saxNote: 'La', frequency: 196, standardNote: 'Sol3' },
+  { saxNote: 'Sol#', frequency: 185, standardNote: 'Fa#3' },
+  { saxNote: 'Sol', frequency: 174.61, standardNote: 'Fa3' },
+  { saxNote: 'Fa#', frequency: 164.81, standardNote: 'Mi3' },
+  { saxNote: 'Fa', frequency: 155.56, standardNote: 'Re#3' },
+  { saxNote: 'Mi', frequency: 146.86, standardNote: 'Re3' },
+  { saxNote: 'Re#', frequency: 138.6, standardNote: 'Do#3' },
+  { saxNote: 'Re', frequency: 130.81, standardNote: 'Do3' },
+  { saxNote: 'Do#', frequency: 121.45, standardNote: 'Si2' },
+  { saxNote: 'Do', frequency: 116.54, standardNote: 'La#2' }
+];
 
 const AudioAnalyzer = () => {
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
   const dataArrayRef = useRef(null);
   const bufferLengthRef = useRef(2048);
+  const canvasRef = useRef(null);
   const [frequency, setFrequency] = useState(null);
 
   useEffect(() => {
     const startAudioCapture = async () => {
       try {
-        // Solicita permissão para acessar o microfone
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-
-        // Cria o contexto de áudio e o analisador
         audioContextRef.current = new (window.AudioContext || window.webkitAudioContext)();
         analyserRef.current = audioContextRef.current.createAnalyser();
 
-        // Cria uma fonte de áudio a partir do stream
         const source = audioContextRef.current.createMediaStreamSource(stream);
         source.connect(analyserRef.current);
 
-        // Configura o analisador
         analyserRef.current.fftSize = bufferLengthRef.current;
         const bufferLength = analyserRef.current.fftSize;
         dataArrayRef.current = new Float32Array(bufferLength);
 
-        // Inicia o loop de análise
         analyzeAudio();
       } catch (error) {
         console.error('Erro ao capturar áudio:', error);
       }
     };
 
-    // Função para analisar o áudio e calcular a frequência dominante
     const analyzeAudio = () => {
       if (!analyserRef.current) return;
 
       analyserRef.current.getFloatTimeDomainData(dataArrayRef.current);
-      const detectedFrequency = autoCorrelate(dataArrayRef.current, audioContextRef.current.sampleRate);
+      drawWaveform();
 
-      if (detectedFrequency !== -1) {
-        setFrequency(detectedFrequency);
-      }
+      const detectedFrequency = autoCorrelate(dataArrayRef.current, audioContextRef.current.sampleRate);
+      setFrequency(detectedFrequency !== -1 ? detectedFrequency : null);
 
       requestAnimationFrame(analyzeAudio);
     };
 
+    const drawWaveform = () => {
+      const canvas = canvasRef.current;
+      const canvasCtx = canvas.getContext('2d');
+      const width = canvas.width;
+      const height = canvas.height;
+
+      canvasCtx.clearRect(0, 0, width, height);
+      canvasCtx.lineWidth = 1.5;
+      canvasCtx.strokeStyle = '#ccc';
+
+      canvasCtx.beginPath();
+
+      let sliceWidth = width * 1.0 / bufferLengthRef.current;
+      let x = 0;
+
+      for (let i = 0; i < bufferLengthRef.current; i++) {
+        let v = dataArrayRef.current[i] * 0.5 + 0.5;
+        let y = v * height;
+
+        if (i === 0) {
+          canvasCtx.moveTo(x, y);
+        } else {
+          canvasCtx.lineTo(x, y);
+        }
+
+        x += sliceWidth;
+      }
+
+      canvasCtx.lineTo(width, height / 2);
+      canvasCtx.stroke();
+    };
+
     startAudioCapture();
 
-    // Cleanup ao desmontar
     return () => {
       if (audioContextRef.current) {
         audioContextRef.current.close();
@@ -110,10 +100,29 @@ const AudioAnalyzer = () => {
     };
   }, []);
 
+  const getNoteData = (frequency) => {
+    if (!frequency) return { color: 'gray', saxNote: '-', frequency: '-', standardNote: '-' };
+
+    // Encontrar a nota mais próxima com base na frequência detectada
+    let closestNote = notesData.reduce((prev, curr) => {
+      return Math.abs(curr.frequency - frequency) < Math.abs(prev.frequency - frequency) ? curr : prev;
+    });
+
+    // Verificar se a frequência está dentro de uma tolerância de ±0.5 Hz
+    const isTuned = Math.abs(closestNote.frequency - frequency) <= 1;
+    return { color: isTuned ? 'green' : 'red', ...closestNote };
+  };
+
+  const { color, saxNote, standardNote } = getNoteData(frequency);
+
   return (
-    <div>
-      <h1>Detector de Frequência de Áudio</h1>
-      <p>Frequência Detectada: {frequency ? `${frequency.toFixed(2)} Hz` : 'Capturando...'}</p>
+    <div className="audio-analyzer">
+      <canvas ref={canvasRef} className="wave-canvas"></canvas>
+      <div className={`note-display ${color}`}>
+        <p className="note sax-note">{saxNote}</p>
+        <p className="frequency">{frequency ? `${frequency.toFixed(2)} Hz` : 'Capturando...'}</p>
+        <p className="note standard-note">{standardNote}</p>
+      </div>
     </div>
   );
 };
