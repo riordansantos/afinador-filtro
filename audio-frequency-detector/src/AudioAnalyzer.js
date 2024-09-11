@@ -3,7 +3,7 @@ import autoCorrelate from './AutoCorrelate';
 import './AudioAnalyzer.css';
 
 const notesData = [
-  { saxNote: 'Do#', frequency: 242.90, standardNote: 'Si3' },
+  { saxNote: 'Do#', frequency: 242.9, standardNote: 'Si3' },
   { saxNote: 'Do', frequency: 233, standardNote: 'La#3' },
   { saxNote: 'Si', frequency: 220, standardNote: 'La3' },
   { saxNote: 'La#', frequency: 207.65, standardNote: 'Sol#3' },
@@ -17,7 +17,7 @@ const notesData = [
   { saxNote: 'Re', frequency: 130.81, standardNote: 'Do3' },
   { saxNote: 'Do#', frequency: 121.45, standardNote: 'Si2' },
   { saxNote: 'Do', frequency: 116.54, standardNote: 'La#2' }
-];
+]
 
 const AudioAnalyzer = () => {
   const audioContextRef = useRef(null);
@@ -41,27 +41,27 @@ const AudioAnalyzer = () => {
         const source = audioContextRef.current.createMediaStreamSource(stream);
         source.connect(analyserRef.current);
 
-        analyserRef.current.fftSize = bufferLengthRef.current;
-        const bufferLength = analyserRef.current.fftSize;
-        dataArrayRef.current = new Float32Array(bufferLength);
+        analyserRef.current.fftSize = bufferLengthRef.current
+        const bufferLength = analyserRef.current.fftSize
+        dataArrayRef.current = new Float32Array(bufferLength)
 
-        analyzeAudio();
+        analyzeAudio()
       } catch (error) {
-        console.error('Erro ao capturar áudio:', error);
+        console.error('Erro ao capturar áudio:', error)
       }
-    };
+    }
 
-    const applyFilter = (dataArray) => {
+    const applyFilter = dataArray => {
       if (filterType === 'fir') {
-        return firFilter(dataArray);
+        return firFilter(dataArray)
       } else if (filterType === 'butter') {
-        return butterworthFilter(dataArray);
+        return butterworthFilter(dataArray)
       }
-      return dataArray;
-    };
+      return dataArray
+    }
 
     const analyzeAudio = () => {
-      if (!analyserRef.current) return;
+      if (!analyserRef.current) return
 
       analyserRef.current.getFloatTimeDomainData(dataArrayRef.current);
       const filteredData = applyFilter(dataArrayRef.current);
@@ -74,46 +74,46 @@ const AudioAnalyzer = () => {
       const detectedFrequency = autoCorrelate(filteredData, audioContextRef.current.sampleRate);
       setFrequency(detectedFrequency !== -1 ? detectedFrequency : null);
 
-      requestAnimationFrame(analyzeAudio);
-    };
+      requestAnimationFrame(analyzeAudio)
+    }
 
-    const drawWaveform = (dataArray) => {
-      const canvas = canvasRef.current;
-      const canvasCtx = canvas.getContext('2d');
-      const width = canvas.width;
-      const height = canvas.height;
+    const drawWaveform = dataArray => {
+      const canvas = canvasRef.current
+      const canvasCtx = canvas.getContext('2d')
+      const width = canvas.width
+      const height = canvas.height
 
-      canvasCtx.clearRect(0, 0, width, height);
-      canvasCtx.lineWidth = 1.5;
-      canvasCtx.strokeStyle = '#ccc';
+      canvasCtx.clearRect(0, 0, width, height)
+      canvasCtx.lineWidth = 1.5
+      canvasCtx.strokeStyle = '#ccc'
 
-      canvasCtx.beginPath();
+      canvasCtx.beginPath()
 
-      let sliceWidth = width * 1.0 / bufferLengthRef.current;
-      let x = 0;
+      let sliceWidth = (width * 1.0) / bufferLengthRef.current
+      let x = 0
 
       for (let i = 0; i < bufferLengthRef.current; i++) {
-        let v = dataArray[i] * 0.5 + 0.5;
-        let y = v * height;
+        let v = dataArray[i] * 0.5 + 0.5
+        let y = v * height
 
         if (i === 0) {
-          canvasCtx.moveTo(x, y);
+          canvasCtx.moveTo(x, y)
         } else {
-          canvasCtx.lineTo(x, y);
+          canvasCtx.lineTo(x, y)
         }
 
-        x += sliceWidth;
+        x += sliceWidth
       }
 
-      canvasCtx.lineTo(width, height / 2);
-      canvasCtx.stroke();
-    };
+      canvasCtx.lineTo(width, height / 2)
+      canvasCtx.stroke()
+    }
 
-    startAudioCapture();
+    startAudioCapture()
 
     return () => {
       if (audioContextRef.current) {
-        audioContextRef.current.close();
+        audioContextRef.current.close()
       }
     };
   }, [filterType]);
@@ -162,7 +162,7 @@ const AudioAnalyzer = () => {
     for (let i = 0; i < y.length; i++) {
       for (let j = 0; j < h.length; j++) {
         if (i - j >= 0 && i - j < x.length) {
-          y[i] += x[i - j] * h[j];
+          y[i] += x[i - j] * h[j]
         }
       }
     }
@@ -185,22 +185,26 @@ const AudioAnalyzer = () => {
     return data; // Simulação
   };
 
-  const getNoteData = (frequency) => {
-    if (!frequency) return { color: 'gray', saxNote: '-', frequency: '-', standardNote: '-' };
+  const getNoteData = frequency => {
+    if (!frequency)
+      return { color: 'gray', saxNote: '-', frequency: '-', standardNote: '-' }
 
     let closestNote = notesData.reduce((prev, curr) => {
-      return Math.abs(curr.frequency - frequency) < Math.abs(prev.frequency - frequency) ? curr : prev;
-    });
+      return Math.abs(curr.frequency - frequency) <
+        Math.abs(prev.frequency - frequency)
+        ? curr
+        : prev
+    })
 
-    const isTuned = Math.abs(closestNote.frequency - frequency) <= 1;
-    return { color: isTuned ? 'green' : 'red', ...closestNote };
-  };
+    const isTuned = Math.abs(closestNote.frequency - frequency) <= 1
+    return { color: isTuned ? 'green' : 'red', ...closestNote }
+  }
 
-  const { color, saxNote, standardNote } = getNoteData(frequency);
+  const { color, saxNote, standardNote } = getNoteData(frequency)
 
   return (
-    <div className="audio-analyzer">
-      <canvas ref={canvasRef} className="wave-canvas"></canvas>
+    <div className='audio-analyzer'>
+      <canvas ref={canvasRef} className='wave-canvas'></canvas>
       <div className={`note-display ${color}`}>
         <p className="frequency">{frequency ? `${frequency.toFixed(2)} Hz` : 'Capturando...'}</p>
         {amplitudePercentage >= 60 && (
@@ -211,7 +215,7 @@ const AudioAnalyzer = () => {
         )}
         <p className="amplitude">Amplitude: {amplitudePercentage}%</p>
       </div>
-      <div className="filter-controls">
+      <div className='filter-controls'>
         <button
           className={filterType === 'none' ? 'active' : ''}
           onClick={() => setFilterType('none')}
@@ -232,7 +236,7 @@ const AudioAnalyzer = () => {
         </button>
       </div>
     </div>
-  );
-};
+  )
+}
 
-export default AudioAnalyzer;
+export default AudioAnalyzer

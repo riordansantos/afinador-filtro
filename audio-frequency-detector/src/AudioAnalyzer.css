@@ -70,9 +70,9 @@
 }
 
 .filter-controls button.active:nth-child(2) {
-    background-color: #a50010; /* Vermelho para Butterworth */
+    background-color: #a50; /* Laranja para Butterworth */
 }
 
 .filter-controls button.active:nth-child(1) {
-    background-color: #6c757d; /* Cinza para Sem Filtro */
+    background-color: #a50010; /* Vermelho para Sem Filtro */
 }
