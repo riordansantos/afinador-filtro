@@ -75,6 +75,7 @@ const AudioAnalyzer = () => {
         drawWaveform(filteredData)
         setFrequency(detectedFrequency !== -1 ? detectedFrequency : null)
       } else {
+        drawWaveform(null) // Desenha uma linha reta
         setFrequency(null)
       }
 
@@ -93,23 +94,28 @@ const AudioAnalyzer = () => {
 
       canvasCtx.beginPath()
 
-      let sliceWidth = (width * 1.0) / bufferLengthRef.current
-      let x = 0
+      if (dataArray) {
+        let sliceWidth = (width * 1.0) / bufferLengthRef.current
+        let x = 0
 
-      for (let i = 0; i < bufferLengthRef.current; i++) {
-        let v = dataArray[i] * 0.5 + 0.5
-        let y = v * height
+        for (let i = 0; i < bufferLengthRef.current; i++) {
+          let v = dataArray[i] * 0.5 + 0.5
+          let y = v * height
 
-        if (i === 0) {
-          canvasCtx.moveTo(x, y)
-        } else {
-          canvasCtx.lineTo(x, y)
+          if (i === 0) {
+            canvasCtx.moveTo(x, y)
+          } else {
+            canvasCtx.lineTo(x, y)
+          }
+
+          x += sliceWidth
         }
-
-        x += sliceWidth
+      } else {
+        // Desenha uma linha reta no meio do canvas
+        canvasCtx.moveTo(0, height / 2)
+        canvasCtx.lineTo(width, height / 2)
       }
 
-      canvasCtx.lineTo(width, height / 2)
       canvasCtx.stroke()
     }
 
